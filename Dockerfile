@@ -1,20 +1,13 @@
-# Dockerfile для разработки
-FROM node:18-alpine
+FROM nginx:alpine
 
-# Устанавливаем рабочую директорию
-WORKDIR /app
+# Копируем конфиг nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Копируем package.json и package-lock.json
-COPY package*.json ./
+# Копируем статические файлы
+COPY out/ /usr/share/nginx/html/
 
-# Устанавливаем зависимости
-RUN npm install --legacy-peer-deps
+# Экспонируем порт
+EXPOSE 80
 
-# Копируем исходный код
-COPY . .
-
-# Открываем порт
-EXPOSE 3000
-
-# Запускаем в режиме разработки
-CMD ["npm", "run", "dev"]
+# Запуск nginx в форграунд режиме
+CMD ["nginx", "-g", "daemon off;"]
