@@ -4,7 +4,7 @@ npm-debug.log*
 
 # Next.js
 .next
-out
+#out
 
 # Production
 build
