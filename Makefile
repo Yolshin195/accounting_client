@@ -35,8 +35,12 @@ login:
 	@echo "Авторизация в Docker Hub..."
 	docker login
 
+build-project:
+	@echo "Сборка приложения"
+	npm run build
+
 # Сборка образа для multiple платформ
-build: setup-buildx
+build: build-project setup-buildx
 	@echo "Сборка образа $(FULL_IMAGE_NAME) для платформ: $(PLATFORMS)"
 	docker buildx build \
 		--platform $(PLATFORMS) \
