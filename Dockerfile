@@ -1,13 +1,13 @@
 FROM nginx:alpine
 
-# Копируем конфиг nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Шаблон: при старте контейнера envsubst подставит ${API_UPSTREAM}
+# и создаст из него /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 
-# Копируем статические файлы
+# Значение по умолчанию, если переменная не задана в compose
+ENV API_UPSTREAM=api:8888
+
+# Статические файлы
 COPY out/ /usr/share/nginx/html/
 
-# Экспонируем порт
-EXPOSE 80
-
-# Запуск nginx в форграунд режиме
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 80 443
