@@ -19,7 +19,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { useLocale } from "@/contexts/locale-context"
 import { createIncomeTransaction, createExpenseTransaction, getCategories } from "@/lib/api"
-import { formatDateForLocale } from "@/lib/date-utils"
+import { convertLocalToUTC, formatDateForLocale, getLocalDateString } from "@/lib/date-utils"
 import { Loader2 } from "lucide-react"
 
 interface Transaction {
@@ -97,12 +97,14 @@ export function TransactionModal({
         transactionData.description = description.trim()
       }
 
-      // Добавляем дату только если она не сегодняшняя или если дата была выбрана
-      const today = new Date().toISOString().split("T")[0]
-      const transactionDate = selectedDate ? selectedDate.toISOString().split("T")[0] : today
+      // Добавляем дату только если она не сегодняшняя или если дата была выбрана.
+      // Сравниваем по локальному календарному дню пользователя, а на сервер
+      // отправляем полную дату-время в UTC.
+      const todayLocal = getLocalDateString(new Date())
+      const selectedDateLocal = selectedDate ? getLocalDateString(selectedDate) : todayLocal
 
-      if (transactionDate !== today) {
-        transactionData.date = transactionDate
+      if (selectedDate && selectedDateLocal !== todayLocal) {
+        transactionData.date = convertLocalToUTC(selectedDate)
       }
 
       let newTransaction
