@@ -10,4 +10,7 @@ ENV API_UPSTREAM=api:8888
 # Статические файлы
 COPY out/ /usr/share/nginx/html/
 
+# Собственные страницы ошибок (вместо стандартных страниц nginx)
+COPY nginx/errors/ /usr/share/nginx/html/errors/
+
 EXPOSE 80 443
