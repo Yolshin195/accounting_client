@@ -1,15 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, TrendingUp, TrendingDown, Edit, Trash2, Save, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useLocale } from "@/contexts/locale-context"
-import { updateTransaction, deleteTransaction } from "@/lib/api"
+import { updateTransaction, deleteTransaction, getCategories } from "@/lib/api"
 import { formatDateForLocale } from "@/lib/date-utils"
 
 interface Transaction {
@@ -19,6 +20,13 @@ interface Transaction {
   category: string
   type: "INCOME" | "EXPENSE"
   date: string
+}
+
+interface Category {
+  id: string
+  code: string
+  name: string
+  type: "INCOME" | "EXPENSE"
 }
 
 interface DayTransactionsModalProps {
@@ -43,6 +51,8 @@ export function DayTransactionsModal({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState("")
   const [editDescription, setEditDescription] = useState("")
+  const [editCategoryCode, setEditCategoryCode] = useState("")
+  const [categories, setCategories] = useState<Category[]>([])
   const { toast } = useToast()
   const { t, locale } = useLocale()
 
@@ -50,6 +60,25 @@ export function DayTransactionsModal({
     en: "en-US",
     th: "th-TH",
     ru: "ru-RU",
+  }
+
+  useEffect(() => {
+    if (open) {
+      loadCategories()
+    }
+  }, [open])
+
+  const loadCategories = async () => {
+    try {
+      const response = await getCategories(0, 100)
+      setCategories(response.content || response)
+    } catch (error: any) {
+      toast({
+        title: t("errors.unknownError"),
+        description: error.message || t("transactions.loadCategoriesError"),
+        variant: "destructive",
+      })
+    }
   }
 
   if (!date) return null
@@ -65,19 +94,21 @@ export function DayTransactionsModal({
     setEditingId(transaction.id)
     setEditAmount(transaction.amount.toString())
     setEditDescription(transaction.description || "")
+    setEditCategoryCode(transaction.category)
   }
 
   const cancelEdit = () => {
     setEditingId(null)
     setEditAmount("")
     setEditDescription("")
+    setEditCategoryCode("")
   }
 
   const saveEdit = async (transaction: Transaction) => {
     try {
       const updatedData: any = {
         amount: Number.parseFloat(editAmount),
-        category: transaction.category,
+        category: editCategoryCode,
         date: transaction.date,
       }
 
@@ -204,11 +235,22 @@ export function DayTransactionsModal({
                             <TrendingDown className="h-4 w-4 text-red-600" />
                           )}
                         </div>
-                        <Badge variant="secondary" className="text-xs">
-                          {transaction.category}
-                        </Badge>
                       </div>
                       <div className="space-y-2">
+                        <Select value={editCategoryCode} onValueChange={setEditCategoryCode}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("transactions.selectCategory")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories
+                              .filter((category) => category.type === transaction.type)
+                              .map((category) => (
+                                <SelectItem key={category.code} value={category.code}>
+                                  {category.name} ({category.code})
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
                         <Input
                           type="number"
                           step="0.01"
